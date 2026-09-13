@@ -1,0 +1,124 @@
+{
+    "accuracy": 100.0,
+    "precision": 100.0,
+    "recall": 100.0,
+    "f1_score": 100.0,
+    "confusion_matrix": [
+        [
+            400,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            400,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            400,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            400
+        ]
+    ],
+    "feature_importances": [
+        {
+            "feature": "srv_count",
+            "importance": 15.05
+        },
+        {
+            "feature": "count",
+            "importance": 14.07
+        },
+        {
+            "feature": "dst_bytes",
+            "importance": 13.79
+        },
+        {
+            "feature": "failed_logins",
+            "importance": 11.21
+        },
+        {
+            "feature": "diff_srv_rate",
+            "importance": 11.19
+        },
+        {
+            "feature": "same_srv_rate",
+            "importance": 9.34
+        },
+        {
+            "feature": "dst_host_same_srv_rate",
+            "importance": 7.21
+        },
+        {
+            "feature": "hot",
+            "importance": 5.39
+        },
+        {
+            "feature": "dst_host_srv_count",
+            "importance": 5.14
+        },
+        {
+            "feature": "src_bytes",
+            "importance": 3.65
+        },
+        {
+            "feature": "duration",
+            "importance": 2.07
+        },
+        {
+            "feature": "service",
+            "importance": 1.12
+        },
+        {
+            "feature": "flag",
+            "importance": 0.75
+        },
+        {
+            "feature": "protocol_type",
+            "importance": 0.01
+        },
+        {
+            "feature": "wrong_fragment",
+            "importance": 0.0
+        }
+    ],
+    "per_class_metrics": {
+        "Normal Traffic": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1_score": 100.0,
+            "support": 400
+        },
+        "DoS / DDoS Attack": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1_score": 100.0,
+            "support": 400
+        },
+        "Port Scan / Probe": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1_score": 100.0,
+            "support": 400
+        },
+        "Brute Force Attack": {
+            "precision": 100.0,
+            "recall": 100.0,
+            "f1_score": 100.0,
+            "support": 400
+        }
+    },
+    "total_test_samples": 1600,
+    "model_name": "Random Forest Classifier",
+    "n_estimators": 100,
+    "max_depth": 16
+}

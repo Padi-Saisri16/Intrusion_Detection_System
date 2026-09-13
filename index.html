@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrusion Detection System | Cybersecurity Operations Center</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome & Chart.js CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="brand-title">
+            <div class="brand-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="brand-text">
+                <h1>INTRUSION DETECTION SYSTEM</h1>
+                <p>Real-Time Network Traffic Classification & Threat Mitigation</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <div class="status-badge" id="system-status-badge">
+                <span class="status-dot"></span>
+                <span id="system-status-text">SYSTEM ONLINE</span>
+            </div>
+            <div class="font-mono" style="font-size: 0.8rem; color: var(--text-dim);">
+                <i class="fa-solid fa-microchip" style="color: var(--primary-cyan);"></i> <span id="hdr-model-name">Random Forest Classifier</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+            <div class="glass-panel kpi-card kpi-cyan">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Packets Scanned</span>
+                    <i class="fa-solid fa-network-wired kpi-icon" style="color: var(--primary-cyan);"></i>
+                </div>
+                <div class="kpi-value" id="kpi-total">0</div>
+                <div class="kpi-sub"><i class="fa-solid fa-arrow-up"></i> Real-time stream active</div>
+            </div>
+
+            <div class="glass-panel kpi-card kpi-red">
+                <div class="kpi-header">
+                    <span class="kpi-title">Threats Detected</span>
+                    <i class="fa-solid fa-triangle-exclamation kpi-icon" style="color: var(--status-red);"></i>
+                </div>
+                <div class="kpi-value" id="kpi-threats">0</div>
+                <div class="kpi-sub" id="kpi-threat-rate">0.0% intrusion rate</div>
+            </div>
+
+            <div class="glass-panel kpi-card kpi-purple">
+                <div class="kpi-header">
+                    <span class="kpi-title">Model Accuracy</span>
+                    <i class="fa-solid fa-brain kpi-icon" style="color: var(--accent-purple);"></i>
+                </div>
+                <div class="kpi-value" id="kpi-accuracy">96.5%</div>
+                <div class="kpi-sub"><i class="fa-solid fa-check"></i> Scikit-Learn Random Forest</div>
+            </div>
+
+            <div class="glass-panel kpi-card kpi-green">
+                <div class="kpi-header">
+                    <span class="kpi-title">Normal Traffic</span>
+                    <i class="fa-solid fa-circle-check kpi-icon" style="color: var(--status-green);"></i>
+                </div>
+                <div class="kpi-value" id="kpi-normal">0</div>
+                <div class="kpi-sub"><i class="fa-solid fa-shield"></i> Clean network flow</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs Bar -->
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('live-monitor')">
+                <i class="fa-solid fa-chart-line"></i> Live Traffic Monitor
+            </button>
+            <button class="tab-btn" onclick="switchTab('single-inspector')">
+                <i class="fa-solid fa-magnifying-glass"></i> Single Packet Inspector
+            </button>
+            <button class="tab-btn" onclick="switchTab('batch-analyzer')">
+                <i class="fa-solid fa-file-csv"></i> Batch Log Analyzer
+            </button>
+            <button class="tab-btn" onclick="switchTab('ai-analytics')">
+                <i class="fa-solid fa-sliders"></i> AI Model Analytics
+            </button>
+            <button class="tab-btn" onclick="switchTab('alert-logs')">
+                <i class="fa-solid fa-list-check"></i> Intrusion Alert Logs
+            </button>
+        </div>
+
+        <!-- TAB 1: Live Traffic Monitor -->
+        <div id="tab-live-monitor" class="tab-content active">
+            <div class="live-grid">
+                <div class="glass-panel">
+                    <div class="card-header-actions">
+                        <div class="card-title">
+                            <i class="fa-solid fa-wave-square" style="color: var(--primary-cyan);"></i> Real-Time Traffic Stream Throughput
+                        </div>
+                        <div>
+                            <button id="btn-toggle-stream" class="btn btn-primary" onclick="toggleLiveStream()">
+                                <i class="fa-solid fa-play"></i> Start Stream
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="throughputChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="card-header-actions">
+                        <div class="card-title">
+                            <i class="fa-solid fa-chart-pie" style="color: var(--accent-purple);"></i> Live Threat Breakdown
+                        </div>
+                    </div>
+                    <div class="chart-container" style="min-height: 250px;">
+                        <canvas id="livePieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="margin-top: 1.5rem;">
+                <div class="card-header-actions">
+                    <div class="card-title">
+                        <i class="fa-solid fa-bolt" style="color: var(--status-yellow);"></i> Live Packet Stream Logs
+                    </div>
+                    <span class="font-mono" style="font-size: 0.8rem; color: var(--text-muted);" id="stream-status-lbl">Stream Idle</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table" id="live-stream-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Source IP</th>
+                                <th>Destination IP</th>
+                                <th>Protocol</th>
+                                <th>Service</th>
+                                <th>Threat Classification</th>
+                                <th>Severity</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="live-stream-tbody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+                                    Click "Start Stream" to simulate real-time packet sniffing and threat evaluation.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Single Packet Inspector -->
+        <div id="tab-single-inspector" class="tab-content">
+            <div class="glass-panel mb-4">
+                <div class="preset-bar">
+                    <span style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; margin-right: 8px;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-cyan); margin-right: 6px;"></i> Preset Threat Vectors:
+                    </span>
+                    <button class="preset-btn" onclick="loadPreset('normal')">🟢 Normal HTTP Traffic</button>
+                    <button class="preset-btn" onclick="loadPreset('ddos')">🔴 SYN Flood DDoS Attack</button>
+                    <button class="preset-btn" onclick="loadPreset('probe')">🟠 Nmap Port Scan Probe</button>
+                    <button class="preset-btn" onclick="loadPreset('bruteforce')">🟣 SSH Brute Force Attack</button>
+                </div>
+            </div>
+
+            <div class="inspector-layout">
+                <div class="glass-panel">
+                    <div class="card-header-actions">
+                        <div class="card-title">
+                            <i class="fa-solid fa-sliders" style="color: var(--primary-cyan);"></i> Network Packet Features
+                        </div>
+                    </div>
+                    <form id="single-packet-form" onsubmit="handleSinglePredict(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="duration">Flow Duration (sec)</label>
+                                <input type="number" step="0.0001" id="duration" class="form-control" value="12.5">
+                            </div>
+                            <div class="form-group">
+                                <label for="protocol_type">Protocol Type</label>
+                                <select id="protocol_type" class="form-control">
+                                    <option value="0">TCP (0)</option>
+                                    <option value="1">UDP (1)</option>
+                                    <option value="2">ICMP (2)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="service">Network Service</label>
+                                <select id="service" class="form-control">
+                                    <option value="0">HTTP (0)</option>
+                                    <option value="1">SSH (1)</option>
+                                    <option value="2">FTP (2)</option>
+                                    <option value="3">DNS (3)</option>
+                                    <option value="4">SMTP (4)</option>
+                                    <option value="5">OTHER (5)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="src_bytes">Source Bytes</label>
+                                <input type="number" id="src_bytes" class="form-control" value="450">
+                            </div>
+                            <div class="form-group">
+                                <label for="dst_bytes">Destination Bytes</label>
+                                <input type="number" id="dst_bytes" class="form-control" value="2300">
+                            </div>
+                            <div class="form-group">
+                                <label for="flag">Connection Flag</label>
+                                <select id="flag" class="form-control">
+                                    <option value="0">SF - Normal Connection (0)</option>
+                                    <option value="1">S0 - Connection Refusal / SYN (1)</option>
+                                    <option value="2">REJ - Connection Rejected (2)</option>
+                                    <option value="3">RSTO - Connection Reset (3)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="count">Connection Count (2s)</label>
+                                <input type="number" id="count" class="form-control" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="srv_count">Service Count (2s)</label>
+                                <input type="number" id="srv_count" class="form-control" value="8">
+                            </div>
+                            <div class="form-group">
+                                <label for="same_srv_rate">Same Service Rate</label>
+                                <input type="number" step="0.01" min="0" max="1" id="same_srv_rate" class="form-control" value="0.95">
+                            </div>
+                            <div class="form-group">
+                                <label for="diff_srv_rate">Diff Service Rate</label>
+                                <input type="number" step="0.01" min="0" max="1" id="diff_srv_rate" class="form-control" value="0.05">
+                            </div>
+                            <div class="form-group">
+                                <label for="dst_host_srv_count">Dst Host Srv Count</label>
+                                <input type="number" id="dst_host_srv_count" class="form-control" value="150">
+                            </div>
+                            <div class="form-group">
+                                <label for="dst_host_same_srv_rate">Dst Host Same Srv Rate</label>
+                                <input type="number" step="0.01" min="0" max="1" id="dst_host_same_srv_rate" class="form-control" value="0.90">
+                            </div>
+                            <div class="form-group">
+                                <label for="wrong_fragment">Wrong Fragments</label>
+                                <input type="number" id="wrong_fragment" class="form-control" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="hot">Hot Triggers</label>
+                                <input type="number" id="hot" class="form-control" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="failed_logins">Failed Logins</label>
+                                <input type="number" id="failed_logins" class="form-control" value="0">
+                            </div>
+                        </div>
+                        <div style="padding: 0 1.5rem 1.5rem;">
+                            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+                                <i class="fa-solid fa-microchip"></i> Evaluate Packet Threat
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Prediction Result Card -->
+                <div class="glass-panel result-card">
+                    <div id="result-status-ring" class="result-status-ring" style="background: rgba(0, 230, 118, 0.15); color: var(--status-green); border-color: rgba(0, 230, 118, 0.4);">
+                        <i class="fa-solid fa-shield-check" id="result-icon"></i>
+                    </div>
+                    <div class="result-title" id="result-title">Normal Traffic</div>
+                    <span id="result-severity-badge" class="badge badge-success">SAFE</span>
+
+                    <div style="margin-top: 1.5rem; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+                            <span>Classification Confidence</span>
+                            <span class="font-mono" id="result-confidence-lbl" style="color: var(--primary-cyan); font-weight: 600;">100.0%</span>
+                        </div>
+                        <div class="confidence-bar-wrapper">
+                            <div class="confidence-bar-fill" id="result-confidence-bar" style="width: 100%; background: var(--status-green);"></div>
+                        </div>
+                    </div>
+
+                    <div class="mitigation-box">
+                        <h4><i class="fa-solid fa-shield-cat"></i> Recommended Mitigation:</h4>
+                        <p id="result-mitigation-text" style="color: var(--text-main);">
+                            Normal network activity. Connection meets safe baseline protocols.
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; height: 180px;">
+                        <canvas id="probabilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Batch Log Analyzer -->
+        <div id="tab-batch-analyzer" class="tab-content">
+            <div class="glass-panel" style="padding: 2rem;">
+                <div class="dropzone" id="csv-dropzone" onclick="document.getElementById('csv-file-input').click()">
+                    <div class="dropzone-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 6px;">
+                        Drag & Drop Network CSV Log File Here
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                        Upload raw network packet features CSV for high-throughput batch classification
+                    </p>
+                    <button class="btn btn-outline" type="button">
+                        <i class="fa-solid fa-folder-open"></i> Select CSV File
+                    </button>
+                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleFileUpload(event)">
+                </div>
+
+                <div style="margin-top: 1rem; text-align: center;">
+                    <a href="/static/data/sample_traffic.csv" download class="font-mono" style="color: var(--primary-cyan); font-size: 0.85rem; text-decoration: none;">
+                        <i class="fa-solid fa-download"></i> Download Pre-configured Test Sample CSV File (500 records)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Batch Results Container -->
+            <div id="batch-results-container" style="display: none; margin-top: 1.5rem;">
+                <div class="live-grid">
+                    <div class="glass-panel" style="padding: 1.5rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">
+                            <i class="fa-solid fa-square-poll-vertical" style="color: var(--primary-cyan);"></i> Batch Analysis Summary
+                        </h3>
+                        <div class="kpi-grid" style="margin-bottom: 0;">
+                            <div class="kpi-card kpi-cyan">
+                                <div class="kpi-title">Total Records</div>
+                                <div class="kpi-value" id="batch-sum-total">0</div>
+                            </div>
+                            <div class="kpi-card kpi-red">
+                                <div class="kpi-title">Malicious Packets</div>
+                                <div class="kpi-value" id="batch-sum-malicious">0</div>
+                            </div>
+                            <div class="kpi-card kpi-green">
+                                <div class="kpi-title">Clean Packets</div>
+                                <div class="kpi-value" id="batch-sum-clean">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel" style="padding: 1.5rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">
+                            <i class="fa-solid fa-pie-chart" style="color: var(--accent-purple);"></i> Threat Ratio
+                        </h3>
+                        <div style="height: 180px;">
+                            <canvas id="batchPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="margin-top: 1.5rem;">
+                    <div class="card-header-actions">
+                        <div class="card-title">
+                            <i class="fa-solid fa-table" style="color: var(--primary-cyan);"></i> Batch Predictions Results Table
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table" id="batch-results-table">
+                            <thead>
+                                <tr>
+                                    <th>Row #</th>
+                                    <th>Prediction</th>
+                                    <th>Severity</th>
+                                    <th>Confidence</th>
+                                    <th>Src Bytes</th>
+                                    <th>Dst Bytes</th>
+                                    <th>Duration (s)</th>
+                                    <th>Conn Count</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batch-results-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: AI Model Analytics -->
+        <div id="tab-ai-analytics" class="tab-content">
+            <div class="kpi-grid">
+                <div class="glass-panel kpi-card kpi-cyan">
+                    <div class="kpi-title">Precision (Weighted)</div>
+                    <div class="kpi-value" id="m-precision">100.0%</div>
+                </div>
+                <div class="glass-panel kpi-card kpi-green">
+                    <div class="kpi-title">Recall (Sensitivity)</div>
+                    <div class="kpi-value" id="m-recall">100.0%</div>
+                </div>
+                <div class="glass-panel kpi-card kpi-purple">
+                    <div class="kpi-title">F1-Score</div>
+                    <div class="kpi-value" id="m-f1">100.0%</div>
+                </div>
+                <div class="glass-panel kpi-card kpi-red">
+                    <div class="kpi-title">Test Dataset Size</div>
+                    <div class="kpi-value" id="m-samples">1,600</div>
+                </div>
+            </div>
+
+            <div class="live-grid">
+                <div class="glass-panel" style="padding: 1.5rem;">
+                    <div class="card-title" style="margin-bottom: 1rem;">
+                        <i class="fa-solid fa-ranking-star" style="color: var(--primary-cyan);"></i> Machine Learning Feature Importance Weights
+                    </div>
+                    <div style="height: 320px;">
+                        <canvas id="featureImportanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding: 1.5rem;">
+                    <div class="card-title" style="margin-bottom: 1rem;">
+                        <i class="fa-solid fa-table-cells" style="color: var(--accent-purple);"></i> 4x4 Confusion Matrix
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Rows: Actual Classes | Columns: Predicted Classes
+                    </p>
+                    <div class="matrix-grid" id="confusion-matrix-grid"></div>
+                </div>
+            </div>
+
+            <!-- Retrain Model Panel -->
+            <div class="glass-panel" style="margin-top: 1.5rem; padding: 1.5rem;">
+                <div class="card-title" style="margin-bottom: 1rem;">
+                    <i class="fa-solid fa-gear" style="color: var(--status-yellow);"></i> Model Re-Training Studio
+                </div>
+                <form id="retrain-form" onsubmit="handleRetrain(event)" style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="min-width: 200px;">
+                        <label for="n_estimators">Number of Trees (n_estimators)</label>
+                        <input type="number" id="n_estimators" class="form-control" value="100" min="10" max="500">
+                    </div>
+                    <div class="form-group" style="min-width: 200px;">
+                        <label for="max_depth">Max Tree Depth</label>
+                        <input type="number" id="max_depth" class="form-control" value="16" min="2" max="50">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary" id="btn-retrain">
+                            <i class="fa-solid fa-arrows-rotate"></i> Re-Train Classifier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 5: Intrusion Alert Logs -->
+        <div id="tab-alert-logs" class="tab-content">
+            <div class="glass-panel">
+                <div class="card-header-actions">
+                    <div class="card-title">
+                        <i class="fa-solid fa-shield-cat" style="color: var(--status-red);"></i> Historical Intrusion Security Alerts
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="log-severity-filter" class="form-control" style="padding: 6px 12px;" onchange="loadAlertLogs()">
+                            <option value="">All Severities</option>
+                            <option value="CRITICAL">Critical Only</option>
+                            <option value="HIGH">High Risk Only</option>
+                            <option value="SAFE">Safe Only</option>
+                        </select>
+                        <button class="btn btn-outline" onclick="loadAlertLogs()">
+                            <i class="fa-solid fa-rotate-right"></i> Refresh Logs
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Timestamp</th>
+                                <th>Source IP</th>
+                                <th>Destination IP</th>
+                                <th>Threat Category</th>
+                                <th>Severity</th>
+                                <th>Confidence</th>
+                                <th>Recommended Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+                                    Loading security logs...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Full-Stack Intrusion Detection System (IDS) &bull; Built with <span>Python</span>, <span>Flask</span>, <span>Scikit-learn</span>, <span>Pandas</span>, <span>HTML5</span> & <span>CSS3</span></p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
